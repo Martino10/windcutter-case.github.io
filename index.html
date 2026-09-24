@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Windcutter Case File — Player Copy</title>
+<style>
+  :root{
+    --parchment:#f4e9d3; --parchment-dark:#e8d9b8; --ink:#3b2f22;
+    --brass:#a9762c; --brass-dark:#7a5420; --red:#7a2b20; --green:#3d5a3a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Georgia','Times New Roman',serif;background:#20180f;color:var(--ink);min-height:100vh;}
+  .app{max-width:960px;margin:0 auto;padding:24px 16px 60px;}
+  h1.title{text-align:center;color:var(--parchment);font-size:28px;letter-spacing:2px;margin:8px 0 4px;font-weight:normal;text-transform:uppercase;}
+  .subtitle{text-align:center;color:#c9b98a;font-size:13px;margin-bottom:20px;letter-spacing:1px;}
+  .tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+  .tab-btn{background:var(--brass-dark);color:#f4e9d3;border:none;padding:10px 18px;font-family:inherit;font-size:14px;cursor:pointer;border-radius:6px 6px 0 0;letter-spacing:0.5px;}
+  .tab-btn.active{background:var(--parchment);color:var(--ink);font-weight:bold;}
+  .panel{background:var(--parchment);border-radius:4px;padding:28px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .panel h2{margin-top:0;color:var(--brass-dark);border-bottom:2px solid var(--brass-dark);padding-bottom:8px;}
+  .hidden{display:none;}
+  .suspect-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:640px){.suspect-grid{grid-template-columns:1fr;}}
+  .card{background:var(--parchment-dark);border:1px solid #c9b98a;border-radius:6px;padding:14px 16px;}
+  .card h3{margin:0 0 4px;color:var(--ink);}
+  .card .role{font-size:12px;color:#6b5a3d;font-style:italic;margin-bottom:8px;}
+  .card .public{font-size:14px;line-height:1.5;}
+  .clue-category{margin-bottom:18px;}
+  .clue-category h3{margin-bottom:8px;color:var(--brass-dark);font-size:16px;}
+  .clue-item{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;font-size:14px;line-height:1.4;}
+  .clue-item input{margin-top:3px;}
+  .note-input{flex:1;min-width:120px;border:none;border-bottom:1px solid #c9b98a;background:transparent;font-family:inherit;font-size:13px;color:var(--ink);}
+  .clue-item.checked span{text-decoration:line-through;opacity:0.6;}
+  .progress-wrap{margin:16px 0;}
+  .progress-bar{height:14px;background:#d8c69a;border-radius:7px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-label{font-size:12px;margin-top:4px;color:#6b5a3d;}
+  .map-wrap{overflow-x:auto;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:13px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .save-note{font-size:11px;color:#8a7a55;margin-top:6px;text-align:right;}
+  .selected rect{stroke-width:3px;stroke:var(--red);}
+  .locationButton{cursor:pointer;}
+  .locationIndicator{visibility:hidden;font-weight:bold;}
+  .player-select{ display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 12px; margin-top: 60px;}
+  .characterSelectTitle{font-size: 24px; color: var(--parchment); margin-bottom: 12px;}
+  .player-select button{background:var(--brass-dark);color:#f4e9d3;border:none;padding:10px 18px;font-family:inherit;font-size:32px;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:5vw;width: 50vw;justify-content: center;}
+  .player-select button:hover{background:var(--brass);}
+  .player-select button img{border-radius:50%;border:2px solid var(--parchment);}
+  .viewPlayerNotes{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+  .viewPlayerNotes select{font-size: 14px; padding: 4px 6px; border-radius: 4px; border: 1px solid #c9b98a; background: var(--parchment-dark); color: var(--ink);}
+  .viewPlayerNotes label{font-size: 14px; color: white; margin-bottom: 4px;}
+  .add-clues-together{background:var(--brass-dark);color:#f4e9d3;border:none;padding:10px 18px;font-family:inherit;font-size:14px;cursor:pointer;border-radius:6px;display:block;margin:0 auto;margin-top:12px;}
+  .add-clues-together:hover{background:var(--brass);}
+  #combined-notes{background:var(--parchment-dark);border:1px solid #c9b98a;border-radius:6px;padding:14px 16px;margin-top:20px;display:none;}
+  #combined-notes p{white-space:pre-line;}
+  .suspectcard:hover{background:var(--parchment);border-color:var(--brass);cursor:pointer;}
+  .primarysuspect{border-color:var(--red);border:3px solid;}
+</style>
+</head>
+<body>
+
+<div class="player-select">
+  <h1 class="characterSelectTitle">Choose your character</h1>
+  <button onclick="selectPlayer('DM')">DM<img class="character-image" src="/img/DM.png" width="100" height="100"/></button>
+  <button onclick="selectPlayer('oliver')">Oliver<img class="character-image" src="/img/oliver.jpeg" width="100" height="100"/></button>
+  <button onclick="selectPlayer('sam')">Sam<img class="character-image" src="/img/sam.jpg" width="100" height="100"/></button>
+  <button onclick="selectPlayer('ezra')">Ezra<img class="character-image" src="/img/sam.jpg" width="100" height="100"/></button>
+  <button onclick="selectPlayer('zep')">Zep<img class="character-image" src="/img/zep.jpeg" width="100" height="100"/></button>
+</div>  
+<div class="app" style="visibility: hidden;">
+  <h1 class="title">The Windcutter</h1>
+  <div class="subtitle">Case file — murder aboard the airship</div>
+  <div class="viewPlayerNotes">
+    <label for="playerNotes">Choose a player to view their notes:</label>
+    <select name="playerNotes" onchange="showPlayerNotes(this.value)">
+      <option value="DM">DM</option>
+      <option value="oliver">Oliver</option>
+      <option value="sam">Sam</option>
+      <option value="ezra">Ezra</option>
+      <option value="zep">Zep</option>
+    </select>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="map">Deck plan</button>
+    <button class="tab-btn" data-tab="suspects">Suspects</button>
+    <button class="tab-btn" data-tab="clues">Clue tracker</button>
+  </div>
+
+  <div class="panel" id="panel-map">
+    <h2>Deck plan</h2>
+    <div class="map-wrap">
+      <svg width="100%" viewBox="0 0 680 820" style="min-width:560px">
+        <ellipse cx="340" cy="65" rx="200" ry="45" fill="#b5d4f4" stroke="#185fa5" stroke-width="1"/>
+        <text x="340" y="65" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#042c53">Gasbag</text>
+        <rect x="60" y="140" width="560" height="125" rx="20" fill="#f1efe8" stroke="#5f5e5a"/>
+        
+        <text x="80" y="170" font-size="14" fill="#2c2c2a" font-weight="bold">Upper deck</text>
+        
+        <a type="button" onclick="selectLocation('bridge')" id="bridge" class="locationButton">
+          <text x="161" y="190" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="80" y="195" width="162" height="56" rx="8" fill="#e6f1fb" stroke="#185fa5"/>
+          <text x="161" y="213" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#0c447c">Bridge</text>
+          <text x="161" y="233" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5">Charts &amp; log</text>
+        </a>
+        <a type="button" onclick="selectLocation('captains-quarters')" id="captains-quarters" class="locationButton">
+          <text x="339" y="190" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="258" y="195" width="162" height="56" rx="8" fill="#e6f1fb" stroke="#185fa5"/>
+          <text x="339" y="213" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#0c447c">Captain's qtrs</text>
+          <text x="339" y="233" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5">Locked &amp; private</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('promenade')" id="promenade" class="locationButton">
+          <text x="517" y="190" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="436" y="195" width="162" height="56" rx="8" fill="#e6f1fb" stroke="#185fa5"/>
+          <text x="517" y="213" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#0c447c">Promenade</text>
+          <text x="517" y="233" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5">Gossip &amp; witnesses</text>
+        </a>
+
+        <rect x="60" y="280" width="560" height="335" rx="20" fill="#f1efe8" stroke="#5f5e5a"/>
+        <text x="80" y="310" font-size="14" fill="#2c2c2a" font-weight="bold">Main deck</text>
+
+        <a type="button" onclick="selectLocation('family-cabin')" id="family-cabin" class="locationButton">
+          <text x="161" y="330" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="80" y="335" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="161" y="353" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Family cabin</text>
+          <text x="161" y="373" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Family of three</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('vances-cabin')" id="vances-cabin" class="locationButton">
+          <text x="339" y="330" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="258" y="335" width="162" height="56" rx="8" fill="#fcebeb" stroke="#a32d2d"/>
+          <text x="339" y="353" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#791f1f">Vance's cabin</text>
+          <text x="339" y="373" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#a32d2d">Crime scene</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('sams-cabin')" id="sams-cabin" class="locationButton">
+          <text x="517" y="330" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="436" y="335" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="517" y="353" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Sam's cabin</text>
+          <text x="517" y="373" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Bard's quarters</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('widows-cabin')" id="widows-cabin" class="locationButton">
+          <text x="161" y="398" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="80" y="403" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="161" y="421" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Widow's cabin</text>
+          <text x="161" y="441" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Quiet retiree</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('ezras-cabin')" id="ezras-cabin" class="locationButton">
+          <text x="339" y="398" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="258" y="403" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="339" y="421" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Ezra's cabin</text>
+          <text x="339" y="441" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Warlock/barbarian</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('thistlewood-cabin')" id="thistlewood-cabin" class="locationButton">
+          <text x="517" y="398" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="436" y="403" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="517" y="421" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Thistlewood cabin</text>
+          <text x="517" y="441" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Passenger cabin</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('olivers-cabin')" id="olivers-cabin" class="locationButton">
+          <text x="161" y="466" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="80" y="471" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="161" y="489" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Oliver's cabin</text>
+          <text x="161" y="509" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Rogue's quarters</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('merchants-cabin')" id="merchants-cabin" class="locationButton">
+          <text x="339" y="466" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="258" y="471" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="339" y="489" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Merchant's cabin</text>
+          <text x="339" y="509" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Fellow trader</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('russ-cabin')" id="russ-cabin" class="locationButton">
+          <text x="517" y="466" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="436" y="471" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="517" y="489" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Russ's cabin</text>
+          <text x="517" y="509" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Searched by crew</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('ilsas-quarters')" id="ilsas-quarters" class="locationButton">
+          <text x="161" y="534" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="80" y="539" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="161" y="557" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Ilsa's quarters</text>
+          <text x="161" y="577" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Steward's room</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('zeps-cabin')" id="zeps-cabin" class="locationButton">
+          <text x="339" y="534" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="258" y="539" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="339" y="557" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Zep's cabin</text>
+          <text x="339" y="577" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Paladin's quarters</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('dining-hall')" id="dining-hall" class="locationButton">
+          <text x="517" y="534" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="436" y="539" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
+          <text x="517" y="557" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Dining hall</text>
+          <text x="517" y="577" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Group interviews</text>
+        </a>
+
+        <rect x="60" y="630" width="560" height="125" rx="20" fill="#f1efe8" stroke="#5f5e5a"/>
+        <text x="80" y="660" font-size="14" fill="#2c2c2a" font-weight="bold">Lower deck</text>
+
+        <a type="button" onclick="selectLocation('crew-quarters')" id="crew-quarters" class="locationButton">
+          <text x="139" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="80" y="685" width="118" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56"/>
+          <text x="139" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#085041">Crew qtrs</text>
+          <text x="139" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0f6e56">Crew bunks</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('engine-room')" id="engine-room" class="locationButton">
+          <text x="273" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="214" y="685" width="118" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56"/>
+          <text x="273" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#085041">Engine room</text>
+          <text x="273" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0f6e56">Loud &amp; smoky</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('cargo-hold')" id="cargo-hold" class="locationButton">
+          <text x="407" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="348" y="685" width="118" height="56" rx="8" fill="#f1efe8" stroke="#5f5e5a"/>
+          <text x="407" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#2c2c2a">Cargo hold</text>
+          <text x="407" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5f5e5a">Access restricted</text>
+        </a>
+
+        <a type="button" onclick="selectLocation('brig')" id="brig" class="locationButton">
+          <text x="541" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <rect x="482" y="685" width="118" height="56" rx="8" fill="#faeeda" stroke="#854f0b"/>
+          <text x="541" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#633806">Brig</text>
+          <text x="541" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#854f0b">Holding cell</text>
+        </a>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#a32d2d"></span>Crime scene</span>
+      <span><span class="dot" style="background:#854f0b"></span>Russ detained</span>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="panel-suspects">
+    <h2>Suspects</h2>
+    <div class="suspect-grid">
+      <a type="button" onclick="selectPrimarySuspect('gorman')" id="gorman">
+        <div class="card suspectcard">
+          <h3>Gorman Thistlewood</h3>
+          <div class="role">Wealthy passenger, self-described trade consultant</div>
+          <div class="public">Smooth-talking, generous with drinks, quick to sympathize with Russ's "unfair" arrest.</div>
+        </div>
+      </a>
+      <a type="button" onclick="selectPrimarySuspect('reyes')" id="reyes">
+        <div class="card suspectcard">
+          <h3>Captain Reyes Voss</h3>
+          <div class="role">Captain of the Windcutter</div>
+          <div class="public">Gruff, controlling, obsessed with keeping order on his ship.</div>
+        </div>
+      </a>
+      <a type="button" onclick="selectPrimarySuspect('merrow')" id="merrow">
+        <div class="card suspectcard">
+          <h3>Ilsa Merrow</h3>
+          <div class="role">Ship's steward</div>
+          <div class="public">Polite, efficient, a little jumpy.</div>
+        </div>
+      </a>
+      <a type="button" onclick="selectPrimarySuspect('dunn')" id="dunn">
+        <div class="card suspectcard">
+          <h3>Petty Officer Dunn</h3>
+          <div class="role">Junior crew, handles spare keys</div>
+          <div class="public">Nervous, avoids eye contact, over-apologetic.</div>
+        </div>
+      </a>
+      <a type="button" onclick="selectPrimarySuspect('engineer')" id="engineer">
+        <div class="card suspectcard">
+          <h3>The masked engineer</h3>
+          <div class="role">Off-duty ship's engineer</div>
+          <div class="public">Seen near Vance's cabin around the time of the murder — suspicious at a glance.</div>
+        </div>
+      </a>
+      <a type="button" onclick="selectPrimarySuspect('vance')" id="vance">
+        <div class="card suspectcard">
+          <h3>Aldric Vance</h3>
+          <div class="role">The victim — merchant with a locked strongbox</div>
+          <div class="public">Publicly brawled with Russ the night before his death, over spilled ale.</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="panel-clues">
+    <h2>Clue tracker</h2>
+    <p style="font-size:13px;color:#6b5a3d;margin-top:-8px;">Check off clues as your table discovers them.</p>
+    <div id="clue-categories">
+      <div class="clue-category" data-category="0">
+        <h3>Motive</h3>
+        <div class="clue-item">
+          <input type="checkbox" id="clue-0-0" onchange="updateClueTick('motive1')">
+          <label for="clue-0-0"><span>Clue found</span></label>
+          <input type="text" class="note-input" placeholder="What did you find?" onchange="updateClueNote('motive1')">
+        </div>
+        <div class="clue-item">
+          <input type="checkbox" id="clue-0-1" onchange="updateClueTick('motive2')">
+          <label for="clue-0-1"><span>Clue found</span></label>
+          <input type="text" class="note-input" placeholder="What did you find?" onchange="updateClueNote('motive2')">
+        </div>
+      </div>
+
+      <div class="clue-category" data-category="1">
+        <h3>Means</h3>
+        <div class="clue-item">
+          <input type="checkbox" id="clue-1-0" onchange="updateClueTick('means1')">
+          <label for="clue-1-0"><span>Clue found</span></label>
+          <input type="text" class="note-input" placeholder="What did you find?" onchange="updateClueNote('means1')">
+        </div>
+        <div class="clue-item">
+          <input type="checkbox" id="clue-1-1" onchange="updateClueTick('means2')">
+          <label for="clue-1-1"><span>Clue found</span></label>
+          <input type="text" class="note-input" placeholder="What did you find?" onchange="updateClueNote('means2')">
+        </div>
+      </div>
+
+      <div class="clue-category" data-category="2">
+        <h3>Opportunity</h3>
+        <div class="clue-item">
+          <input type="checkbox" id="clue-2-0" onchange="updateClueTick('opportunity1')">
+          <label for="clue-2-0"><span>Clue found</span></label>
+          <input type="text" class="note-input" placeholder="What did you find?" onchange="updateClueNote('opportunity1')">
+        </div>
+        <div class="clue-item">
+          <input type="checkbox" id="clue-2-1" onchange="updateClueTick('opportunity2')">
+          <label for="clue-2-1"><span>Clue found</span></label>
+          <input type="text" class="note-input" placeholder="What did you find?" onchange="updateClueNote('opportunity2')">
+        </div>
+      </div>
+
+      <div class="clue-category" data-category="3">
+        <h3>The frame</h3>
+        <div class="clue-item">
+          <input type="checkbox" id="clue-3-0" onchange="updateClueTick('frame1')">
+          <label for="clue-3-0"><span>Clue found</span></label>
+          <input type="text" class="note-input" placeholder="What did you find?" onchange="updateClueNote('frame1')">
+        </div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">0 / 4 categories confirmed</div>
+    </div>
+    <button class="add-clues-together" onclick="addCluesTogether()">Add Clues Together</button>
+    <div id="combined-notes">
+      <h2>Combined Notes</h2>
+      <h3>Motive</h3>
+      <p id="combined-motive"></p>
+      <h3>Means</h3>
+      <p id="combined-means"></p>
+      <h3>Opportunity</h3>
+      <p id="combined-opportunity"></p>
+      <h3>The frame</h3>
+      <p id="combined-frame"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+
+let data = null;
+const dataReady = getRealtimeData().then(loadedData => {
+  data = loadedData;
+  window.caseData = data;
+  console.log('Data loaded from Firebase Realtime Database:', data);
+  return data;
+});
+let selectedPlayer = null;
+let playerData;
+let dataFileHandle = null;
+let realtimeDatabase;
+let realtimeRef;
+let realtimeSet;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBLxmVH1-5JXRkIEWgUOZW-lxSla6OUu4A",
+  authDomain: "windcutter-case.firebaseapp.com",
+  databaseURL: "https://windcutter-case-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "windcutter-case",
+  storageBucket: "windcutter-case.firebasestorage.app",
+  messagingSenderId: "385210001785",
+  appId: "1:385210001785:web:b4eed77b37743bb96ba7a8"
+};
+
+async function getRealtimeData(){
+  const {initializeApp} = await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js');
+  const {getDatabase, ref, get, set} = await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js');
+  const app = initializeApp(firebaseConfig);
+  realtimeDatabase = getDatabase(app);
+  realtimeRef = ref;
+  realtimeSet = set;
+  const snapshot = await get(realtimeRef(realtimeDatabase, '/'));
+
+  if(!snapshot.exists()){
+    throw new Error('No data found in the Firebase Realtime Database.');
+  }
+  return snapshot.val();
+}
+
+async function selectPlayer(playerName) {
+  await dataReady;
+  selectedPlayer = playerName;
+  playerData = data[selectedPlayer];
+  document.querySelector('.player-select').style.display = 'none';
+  document.querySelector('.app').style.visibility = 'visible';
+  document.querySelector('.viewPlayerNotes select').value = playerName;
+  populatePageFromData();
+}
+
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.remove('hidden');
+  });
+});
+
+let selectedLocationButtons = [];
+async function selectLocation(loc){
+  const selectedLocationIds = data[selectedPlayer].selectedLocations ?? [];
+  selectedLocationButtons = selectedLocationIds
+    .map(locationId => document.getElementById('panel-map').querySelector('a#'+locationId))
+    .filter(Boolean);
+  let newSelectedBtn = document.getElementById('panel-map').querySelector('a#'+loc);
+  if(newSelectedBtn.classList.contains('selected')){
+    selectedLocationButtons = selectedLocationButtons.filter(button => button !== newSelectedBtn);
+    newSelectedBtn.classList.remove('selected');
+  } else {
+    selectedLocationButtons.push(newSelectedBtn);
+    newSelectedBtn.classList.add('selected');
+    showLocationIndicator(loc);
+    await realtimeSet(
+    realtimeRef(realtimeDatabase, selectedPlayer + '/currentLocation'),
+    loc
+  );
+  }
+  const updatedLocationIds = selectedLocationButtons.map(btn=>btn.id);
+  data[selectedPlayer].selectedLocations = updatedLocationIds;
+  await realtimeSet(
+    realtimeRef(realtimeDatabase, selectedPlayer + '/selectedLocations'),
+    updatedLocationIds
+  );
+  console.log(data[selectedPlayer]);
+
+}
+
+function showLocationIndicator(loc){
+  document.querySelectorAll('.locationIndicator').forEach(el=>el.style.visibility='hidden');
+  const btn = document.getElementById('panel-map').querySelector('a#'+loc);
+  if(btn){
+    const indicator = btn.querySelector('.locationIndicator');
+    indicator.textContent = 'You are here';
+    indicator.style.visibility='visible';
+  }
+  data[selectedPlayer].currentLocation = loc;
+}
+
+const checkboxRefs = Array.from(document.querySelectorAll('.clue-item input[type="checkbox"]'))
+  .map(cb => ({
+    cb,
+    clueId: cb.getAttribute('onchange').match(/'([^']+)'/)[1],
+    cat: Number(cb.closest('.clue-category').dataset.category)
+  }));
+
+function showPlayerNotes(playerName){
+  populatePageFromData(playerName);
+  if (selectedPlayer !== playerName) {
+    disableInputs();
+  } else {
+    enableInputs();
+  }
+}
+
+function populatePageFromData(player = selectedPlayer){
+  document.querySelectorAll('.locationButton').forEach(button => {
+    button.classList.remove('selected');
+  });
+  document.querySelectorAll('.locationIndicator').forEach(indicator => {
+    indicator.textContent = '';
+    indicator.style.visibility = 'hidden';
+  });
+
+  const selectedLocationIds = data[player].selectedLocations ?? [];
+  selectedLocationButtons = [];
+
+  document.querySelectorAll('.locationButton').forEach(button => {
+    const isSelected = selectedLocationIds.includes(button.id);
+    button.classList.toggle('selected', isSelected);
+    if(isSelected) selectedLocationButtons.push(button);
+  });
+
+  if(data[player].currentLocation){
+    const currentLocation = document.getElementById('panel-map')
+      .querySelector('a#'+data[player].currentLocation);
+    if(currentLocation){
+      const indicator = currentLocation.querySelector('.locationIndicator');
+      indicator.textContent = 'You are here';
+      indicator.style.visibility = 'visible';
+    }
+  }
+
+  if (data[player].primarySuspect) {
+    document.querySelectorAll('.suspectcard').forEach(card => {
+      card.classList.remove('primarysuspect');
+    });
+    const primarySuspectCard = document.getElementById(data[player].primarySuspect)?.querySelector('.suspectcard');
+    if (primarySuspectCard) {
+      primarySuspectCard.classList.add('primarysuspect');
+    }
+  }
+
+  checkboxRefs.forEach(({cb, clueId}) => {
+    const clue = data[player].clues?.[clueId];
+    const isChecked = Boolean(clue?.ticked_off);
+    cb.checked = isChecked;
+    cb.closest('.clue-item').classList.toggle('checked', isChecked);
+    cb.closest('.clue-item').querySelector('.note-input').value = clue?.note ?? '';
+  });
+
+  updateProgress();
+}
+
+checkboxRefs.forEach(({cb}) => {
+  cb.addEventListener('change', () => {
+    cb.closest('.clue-item').classList.toggle('checked', cb.checked);
+    updateProgress();
+    saveState();
+  });
+});
+
+async function selectPrimarySuspect(suspectId){
+  data[selectedPlayer].primarySuspect = suspectId;
+  document.querySelectorAll('.suspectcard').forEach(card => {
+    card.classList.remove('primarysuspect');
+  });
+  document.getElementById(suspectId).querySelector('.suspectcard').classList.add('primarysuspect');
+  await realtimeSet(
+    realtimeRef(realtimeDatabase, selectedPlayer + '/primarySuspect'),
+    suspectId
+  );
+  console.log(data[selectedPlayer]);
+}
+
+function updateProgress(){
+  // Count how many categories have at least one clue checked
+  const catCount = document.querySelectorAll('.clue-category').length;
+  let confirmed = 0;
+  for(let g=0; g<catCount; g++){
+    const anyChecked = checkboxRefs.filter(r=>r.cat===g).some(r=>r.cb.checked);
+    if(anyChecked) confirmed++;
+  }
+  document.getElementById('progress-fill').style.width = (confirmed/catCount*100)+'%';
+  document.getElementById('progress-label').textContent = confirmed+' / '+catCount+' categories confirmed';
+}
+
+async function updateClueTick(clueId){
+  data[selectedPlayer].clues[clueId].ticked_off = !data[selectedPlayer].clues[clueId].ticked_off;
+  console.log(data[selectedPlayer].clues);
+  await realtimeSet(
+    realtimeRef(realtimeDatabase, selectedPlayer + '/clues/' + clueId + '/ticked_off'),
+    data[selectedPlayer].clues[clueId].ticked_off
+  );
+}
+
+async function updateClueNote(clueId){
+  data[selectedPlayer].clues[clueId].note = document.querySelector('.clue-item input[type="text"][onchange="updateClueNote(\''+clueId+'\')"]').value;
+  console.log(data[selectedPlayer].clues);
+  await realtimeSet(
+    realtimeRef(realtimeDatabase, selectedPlayer + '/clues/' + clueId + '/note'),
+    data[selectedPlayer].clues[clueId].note
+  );
+}
+
+function addCluesTogether(){
+  let combinedMotiveNotes = '';
+  for (player in data) {
+    if (player === 'DM') continue; // Skip DM
+    if (data[player].clues.motive1.note != "" || data[player].clues.motive2.note != "") {
+      combinedMotiveNotes += `${capitalizeFirstLetter(player)}:\n`;
+    } else continue;
+    if (data[player].clues.motive1.note != "") {
+      combinedMotiveNotes += `${data[player].clues.motive1.note}\n`;
+    }
+    if (data[player].clues.motive2.note != "") {
+      combinedMotiveNotes += `${data[player].clues.motive2.note}\n`;
+    }
+    combinedMotiveNotes += '\n';
+  }
+  if (combinedMotiveNotes === '') {
+    combinedMotiveNotes = 'No notes found for Motive.';
+  }
+
+  let combinedMeansNotes = '';
+  for (player in data) {
+    if (player === 'DM') continue; // Skip DM
+    if (data[player].clues.means1.note != "" || data[player].clues.means2.note != "") {
+      combinedMeansNotes += `${capitalizeFirstLetter(player)}:\n`;
+    } else continue;
+    if (data[player].clues.means1.note != "") {
+      combinedMeansNotes += `${data[player].clues.means1.note}\n`;
+    }
+    if (data[player].clues.means2.note != "") {
+      combinedMeansNotes += `${data[player].clues.means2.note}\n`;
+    }
+    combinedMeansNotes += '\n';
+  }
+  if (combinedMeansNotes === '') {
+    combinedMeansNotes = 'No notes found for Means.';
+  }
+
+  let combinedOpportunityNotes = '';
+  for (player in data) {
+    if (player === 'DM') continue; // Skip DM
+    if (data[player].clues.opportunity1.note != "" || data[player].clues.opportunity2.note != "") {
+      combinedOpportunityNotes += `${capitalizeFirstLetter(player)}:\n`;
+    } else continue;
+    if (data[player].clues.opportunity1.note != "") {
+      combinedOpportunityNotes += `${data[player].clues.opportunity1.note}\n`;
+    }
+    if (data[player].clues.opportunity2.note != "") {
+      combinedOpportunityNotes += `${data[player].clues.opportunity2.note}\n`;
+    }
+    combinedOpportunityNotes += '\n';
+  }
+  if (combinedOpportunityNotes === '') {
+    combinedOpportunityNotes = 'No notes found for Opportunity.';
+  }
+
+  let combinedFrameNotes = '';
+  for (player in data) {
+    if (player === 'DM') continue; // Skip DM
+    if (data[player].clues.frame1.note != "") {
+      combinedFrameNotes += `${capitalizeFirstLetter(player)}:\n ${data[player].clues.frame1.note}\n`;
+    } else continue;
+    combinedFrameNotes += '\n';
+  }
+  if (combinedFrameNotes === '') {
+    combinedFrameNotes = 'No notes found for Frame.';
+  }
+
+  document.getElementById('combined-motive').textContent = combinedMotiveNotes;
+  document.getElementById('combined-means').textContent = combinedMeansNotes;
+  document.getElementById('combined-opportunity').textContent = combinedOpportunityNotes;
+  document.getElementById('combined-frame').textContent = combinedFrameNotes;
+  document.getElementById('combined-notes').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('combined-notes').style.display = 'block';
+}
+
+// Source - https://stackoverflow.com/a/1026087
+// Posted by Steve Harrison, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-09-17, License - CC BY-SA 4.0
+
+function capitalizeFirstLetter(val) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+
+function disableInputs(){
+  document.querySelectorAll('.locationButton').forEach(button => {
+    button.style.pointerEvents = 'none';
+    button.style.opacity = '0.5';
+  });
+  document.querySelectorAll('.clue-item input[type="checkbox"]').forEach(cb => {
+    cb.disabled = true;
+  });
+  document.querySelectorAll('.clue-item input[type="text"]').forEach(input => {
+    input.disabled = true;
+  });
+  document.querySelectorAll('.suspectcard').forEach(card => {
+    card.style.pointerEvents = 'none';
+    card.style.opacity = '0.5';
+  });
+}
+
+function enableInputs(){
+  document.querySelectorAll('.locationButton').forEach(button => {
+    button.style.pointerEvents = 'auto';
+    button.style.opacity = '1';
+  });
+  document.querySelectorAll('.clue-item input[type="checkbox"]').forEach(cb => {
+    cb.disabled = false;
+  });
+  document.querySelectorAll('.clue-item input[type="text"]').forEach(input => {
+    input.disabled = false;
+  });
+  document.querySelectorAll('.suspectcard').forEach(card => {
+    card.style.pointerEvents = 'auto';
+    card.style.opacity = '1';
+  });
+}
+updateProgress();
+</script>
+
+</body>
+</html>

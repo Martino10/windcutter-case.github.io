@@ -51,12 +51,22 @@
   .viewPlayerNotes{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
   .viewPlayerNotes select{font-size: 14px; padding: 4px 6px; border-radius: 4px; border: 1px solid #c9b98a; background: var(--parchment-dark); color: var(--ink);}
   .viewPlayerNotes label{font-size: 14px; color: white; margin-bottom: 4px;}
-  .add-clues-together{background:var(--brass-dark);color:#f4e9d3;border:none;padding:10px 18px;font-family:inherit;font-size:14px;cursor:pointer;border-radius:6px;display:block;margin:0 auto;margin-top:12px;}
-  .add-clues-together:hover{background:var(--brass);}
+  .add-together{background:var(--brass-dark);color:#f4e9d3;border:none;padding:10px 18px;font-family:inherit;font-size:14px;cursor:pointer;border-radius:6px;display:block;margin:0 auto;margin-top:12px;}
+  .add-together:hover{background:var(--brass);}
   #combined-notes{background:var(--parchment-dark);border:1px solid #c9b98a;border-radius:6px;padding:14px 16px;margin-top:20px;display:none;}
   #combined-notes p{white-space:pre-line;}
+  #party-voted-suspects{margin-top:20px;overflow-x:auto;}
+  #party-voted-suspects-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--parchment-dark);border:1px solid #c9b98a;border-radius:6px;overflow:hidden;}
+  #party-voted-suspects-table td{padding:10px 14px;border-bottom:1px solid #c9b98a;vertical-align:middle;}
+  #party-voted-suspects-table tr:last-child td{border-bottom:none;}
+  #party-voted-suspects-table tr:nth-child(even){background:rgba(244,233,211,0.55);}
+  #party-voted-suspects-table .party-player{display:flex;align-items:center;gap:10px;font-weight:bold;color:var(--brass-dark);}
+  #party-voted-suspects-table .party-suspect{color:var(--ink);font-weight:bold;}
+  #party-voted-suspects-table img{width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid var(--brass);}
+  #party-voted-suspects-table .empty-state{text-align:center;color:#6b5a3d;font-style:italic;}
   .suspectcard:hover{background:var(--parchment);border-color:var(--brass);cursor:pointer;}
   .primarysuspect{border-color:var(--red);border:3px solid;}
+  th{text-align: left; padding: 10px 14px; background: var(--brass-dark); color: var(--parchment);}
 </style>
 </head>
 <body>
@@ -68,6 +78,7 @@
   <button onclick="selectPlayer('sam')">Sam<img class="character-image" src="https://martinkrikke.nl/windcutter-case.github.io/img/sam.jpg" width="100" height="100"/></button>
   <button onclick="selectPlayer('ezra')">Ezra<img class="character-image" src="https://martinkrikke.nl/windcutter-case.github.io/img/sam.jpg" width="100" height="100"/></button>
   <button onclick="selectPlayer('zep')">Zep<img class="character-image" src="https://martinkrikke.nl/windcutter-case.github.io/img/zep.jpeg" width="100" height="100"/></button>
+  <button onclick="selectPlayer('russ')">Russ<img class="character-image" src="https://martinkrikke.nl/windcutter-case.github.io/img/russ.png" width="100" height="100"/></button>
 </div>  
 <div class="app" style="visibility: hidden;">
   <h1 class="title">The Windcutter</h1>
@@ -80,6 +91,7 @@
       <option value="sam">Sam</option>
       <option value="ezra">Ezra</option>
       <option value="zep">Zep</option>
+      <option value="russ">Russ</option>
     </select>
   </div>
 
@@ -290,6 +302,12 @@
         </div>
       </a>
     </div>
+    <button class="add-together" onclick="addSuspectsTogether()">View party's primary suspects</button>
+    <div id="party-voted-suspects">
+      <table id="party-voted-suspects-table">
+
+      </table>
+    </div>
   </div>
 
   <div class="panel hidden" id="panel-clues">
@@ -351,7 +369,7 @@
       <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
       <div class="progress-label" id="progress-label">0 / 4 categories confirmed</div>
     </div>
-    <button class="add-clues-together" onclick="addCluesTogether()">Add Clues Together</button>
+    <button class="add-together" onclick="addCluesTogether()">Add Clues Together</button>
     <div id="combined-notes">
       <h2>Combined Notes</h2>
       <h3>Motive</h3>
@@ -536,7 +554,7 @@ checkboxRefs.forEach(({cb}) => {
   cb.addEventListener('change', () => {
     cb.closest('.clue-item').classList.toggle('checked', cb.checked);
     updateProgress();
-    saveState();
+    //saveState();
   });
 });
 
@@ -581,6 +599,22 @@ async function updateClueNote(clueId){
     realtimeRef(realtimeDatabase, selectedPlayer + '/clues/' + clueId + '/note'),
     data[selectedPlayer].clues[clueId].note
   );
+}
+
+function addSuspectsTogether(){
+  let suspectTable = '<th>Player</th><th>Primary suspect</th>';
+  let suspectCount = 0;
+  for (player in data) {
+    if (player === 'DM') continue; // Skip DM
+    if (data[player].primarySuspect) {
+      suspectCount++;
+      suspectTable += `<tr><td class="party-player">${capitalizeFirstLetter(player)} <img src="${data[player].img_url}" alt="${data[player].name}" /></td><td class="party-suspect">${capitalizeFirstLetter(data[player].primarySuspect)}</td></tr>`;
+    }
+  }
+  if (suspectCount === 0) {
+    suspectTable = '<tr><td colspan="2" class="empty-state">No primary suspects selected by any player.</td></tr>';
+  }
+  document.getElementById('party-voted-suspects-table').innerHTML = suspectTable;
 }
 
 function addCluesTogether(){

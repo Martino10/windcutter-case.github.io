@@ -735,8 +735,7 @@ function populatePageFromData(player = selectedPlayer){
     cb.closest('.clue-item').querySelector('.note-input').value = clue?.note ?? '';
   });
 
-  document.getElementById('legend-who').textContent =
-    player === selectedPlayer ? 'you' : (data[player].name ?? player);
+  // document.getElementById('legend-who').textContent = player === selectedPlayer ? 'you' : (data[player].name ?? player);
 
   updateProgress();
 }
@@ -808,18 +807,25 @@ function addSuspectsTogether(){
   document.getElementById('party-voted-suspects-table').innerHTML = suspectTable;
 }
 
+function hasTextNote(note) {
+  return note !== null && note !== undefined && String(note).trim() !== '';
+}
+
 function addCluesTogether(){
   let combinedMotiveNotes = '';
-  for (player in data) {
+  for (const player in data) {
     if (player === 'DM') continue; // Skip DM
-    if (data[player].clues.motive1.note != "" || data[player].clues.motive2.note != "") {
-      combinedMotiveNotes += `${capitalizeFirstLetter(player)}:\n`;
-    } else continue;
-    if (data[player].clues.motive1.note != "") {
-      combinedMotiveNotes += `${data[player].clues.motive1.note}\n`;
+
+    const motive1Note = data[player]?.clues?.motive1?.note;
+    const motive2Note = data[player]?.clues?.motive2?.note;
+    if (!hasTextNote(motive1Note) && !hasTextNote(motive2Note)) continue;
+
+    combinedMotiveNotes += `${capitalizeFirstLetter(player)}:\n`;
+    if (hasTextNote(motive1Note)) {
+      combinedMotiveNotes += `${motive1Note}\n`;
     }
-    if (data[player].clues.motive2.note != "") {
-      combinedMotiveNotes += `${data[player].clues.motive2.note}\n`;
+    if (hasTextNote(motive2Note)) {
+      combinedMotiveNotes += `${motive2Note}\n`;
     }
     combinedMotiveNotes += '\n';
   }
@@ -828,16 +834,19 @@ function addCluesTogether(){
   }
 
   let combinedMeansNotes = '';
-  for (player in data) {
+  for (const player in data) {
     if (player === 'DM') continue; // Skip DM
-    if (data[player].clues.means1.note != "" || data[player].clues.means2.note != "") {
-      combinedMeansNotes += `${capitalizeFirstLetter(player)}:\n`;
-    } else continue;
-    if (data[player].clues.means1.note != "") {
-      combinedMeansNotes += `${data[player].clues.means1.note}\n`;
+
+    const means1Note = data[player]?.clues?.means1?.note;
+    const means2Note = data[player]?.clues?.means2?.note;
+    if (!hasTextNote(means1Note) && !hasTextNote(means2Note)) continue;
+
+    combinedMeansNotes += `${capitalizeFirstLetter(player)}:\n`;
+    if (hasTextNote(means1Note)) {
+      combinedMeansNotes += `${means1Note}\n`;
     }
-    if (data[player].clues.means2.note != "") {
-      combinedMeansNotes += `${data[player].clues.means2.note}\n`;
+    if (hasTextNote(means2Note)) {
+      combinedMeansNotes += `${means2Note}\n`;
     }
     combinedMeansNotes += '\n';
   }
@@ -846,16 +855,19 @@ function addCluesTogether(){
   }
 
   let combinedOpportunityNotes = '';
-  for (player in data) {
+  for (const player in data) {
     if (player === 'DM') continue; // Skip DM
-    if (data[player].clues.opportunity1.note != "" || data[player].clues.opportunity2.note != "") {
-      combinedOpportunityNotes += `${capitalizeFirstLetter(player)}:\n`;
-    } else continue;
-    if (data[player].clues.opportunity1.note != "") {
-      combinedOpportunityNotes += `${data[player].clues.opportunity1.note}\n`;
+
+    const opportunity1Note = data[player]?.clues?.opportunity1?.note;
+    const opportunity2Note = data[player]?.clues?.opportunity2?.note;
+    if (!hasTextNote(opportunity1Note) && !hasTextNote(opportunity2Note)) continue;
+
+    combinedOpportunityNotes += `${capitalizeFirstLetter(player)}:\n`;
+    if (hasTextNote(opportunity1Note)) {
+      combinedOpportunityNotes += `${opportunity1Note}\n`;
     }
-    if (data[player].clues.opportunity2.note != "") {
-      combinedOpportunityNotes += `${data[player].clues.opportunity2.note}\n`;
+    if (hasTextNote(opportunity2Note)) {
+      combinedOpportunityNotes += `${opportunity2Note}\n`;
     }
     combinedOpportunityNotes += '\n';
   }
@@ -864,12 +876,13 @@ function addCluesTogether(){
   }
 
   let combinedFrameNotes = '';
-  for (player in data) {
+  for (const player in data) {
     if (player === 'DM') continue; // Skip DM
-    if (data[player].clues.frame1.note != "") {
-      combinedFrameNotes += `${capitalizeFirstLetter(player)}:\n ${data[player].clues.frame1.note}\n`;
-    } else continue;
-    combinedFrameNotes += '\n';
+
+    const frame1Note = data[player]?.clues?.frame1?.note;
+    if (!hasTextNote(frame1Note)) continue;
+
+    combinedFrameNotes += `${capitalizeFirstLetter(player)}:\n${frame1Note}\n\n`;
   }
   if (combinedFrameNotes === '') {
     combinedFrameNotes = 'No notes found for Frame.';

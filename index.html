@@ -286,8 +286,6 @@
       </svg>
     </div>
     <div class="legend">
-      <span><span class="legend-outline"></span>Rooms <em id="legend-who">you</em> searched</span>
-      <span><span class="legend-check">&#10003;</span>Searched by anyone in the party</span>
       <span><span class="dot" style="background:#a32d2d"></span>Crime scene</span>
       <span><span class="dot" style="background:#854f0b"></span>Russ detained</span>
       <span><span class="dot" style="background:var(--black)"></span><span id="player-visited-label"></span> visited</span>
@@ -456,51 +454,6 @@ function span(className, text){
   el.className = className;
   el.textContent = text;
   return el;
-}
-
-function renderDeckPlan(){
-  if(!data.Decks || !data.Rooms){
-    console.warn('Deck plan is empty: the database is missing the Decks and/or Rooms node.');
-  }
-
-  const container = document.getElementById('deck-plan');
-  const decks = data.Decks ?? {};
-  const rooms = data.Rooms ?? {};
-  const byOrder = source => (a, b) => (source[a].order ?? 0) - (source[b].order ?? 0);
-
-  container.textContent = '';
-  Object.keys(decks).sort(byOrder(decks)).forEach(deckId => {
-    const deckRooms = rooms[deckId];
-    if(!deckRooms) return;
-
-    const section = document.createElement('div');
-    section.className = 'deck-section';
-    section.appendChild(span('deck-label', decks[deckId].label ?? deckId));
-
-    const grid = document.createElement('div');
-    grid.className = 'room-grid';
-
-    Object.keys(deckRooms).sort(byOrder(deckRooms)).forEach(roomId => {
-      const room = deckRooms[roomId];
-      const card = document.createElement('a');
-      card.id = roomId;
-      card.className = 'locationButton room-card ' + (room.variant ?? 'cabin');
-      if(room.visited) card.classList.add('visited');
-      card.addEventListener('click', () => selectLocation(roomId));
-
-      card.appendChild(span('locationIndicator', 'You are here'));
-      card.appendChild(span('room-name', room.name ?? roomId));
-      card.appendChild(span('room-subtitle', room.subtitle ?? ''));
-      const mark = span('visitedMark', '✓');
-      mark.title = 'Searched by someone in the party';
-      card.appendChild(mark);
-
-      grid.appendChild(card);
-    });
-
-    section.appendChild(grid);
-    container.appendChild(section);
-  });
 }
 
 async function getRealtimeData(){

@@ -47,6 +47,36 @@
   .locationButton{cursor:pointer;}
   .player-location-avatar{clip-path:circle(50%);pointer-events:none;}
   .locationIndicator{visibility:hidden;font-weight:bold;}
+  .visitedMark{visibility:hidden;position:absolute;top:6px;right:8px;font-size:12px;}
+  .visited .visitedMark{visibility:visible;}
+  .gasbag{max-width:400px;margin:0 auto 20px;padding:18px;text-align:center;font-size:14px;color:#042c53;background:#b5d4f4;border:1px solid #185fa5;border-radius:50%;}
+  .deck-plan{display:flex;flex-direction:column;gap:15px;}
+  .deck-section{background:#f1efe8;border:1px solid #5f5e5a;border-radius:20px;padding:14px 20px 18px;}
+  .deck-label{font-size:14px;font-weight:bold;color:#2c2c2a;margin-bottom:12px;}
+  .room-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+  @media(max-width:640px){.room-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .room-card{position:relative;display:block;text-align:center;text-decoration:none;border:1px solid;border-radius:8px;padding:9px 10px;}
+  .room-card .locationIndicator{display:block;font-size:12px;color:#185fa5;margin-bottom:3px;}
+  .room-card .room-name{display:block;font-size:14px;}
+  .room-card .room-subtitle{display:block;font-size:12px;margin-top:3px;}
+  .room-card.selected{outline:3px solid var(--red);outline-offset:-3px;}
+  .room-card.common{background:#e6f1fb;border-color:#185fa5;color:#185fa5;}
+  .room-card.common .room-name{color:#0c447c;}
+  .room-card.cabin{background:#faece7;border-color:#993c1d;color:#993c1d;}
+  .room-card.cabin .room-name{color:#712b13;}
+  .room-card.crime-scene{background:#fcebeb;border-color:#a32d2d;color:#a32d2d;}
+  .room-card.crime-scene .room-name{color:#791f1f;}
+  .room-card.crew{background:#e1f5ee;border-color:#0f6e56;color:#0f6e56;}
+  .room-card.crew .room-name{color:#085041;}
+  .room-card.restricted{background:#f7f6f1;border-color:#5f5e5a;color:#5f5e5a;}
+  .room-card.restricted .room-name{color:#2c2c2a;}
+  .room-card.holding{background:#faeeda;border-color:#854f0b;color:#854f0b;}
+  .room-card.holding .room-name{color:#633806;}
+  .legend-outline{width:14px;height:14px;border:1px solid #993c1d;border-radius:3px;outline:2px solid var(--red);outline-offset:-2px;display:inline-block;}
+  .legend-check{font-weight:bold;color:#6b5a3d;}
+  .legend em{font-style:normal;font-weight:bold;}
+  .reset-case{margin-top:6px;background:var(--red);color:#f4e9d3;border:none;padding:5px 10px;font-family:inherit;font-size:12px;cursor:pointer;border-radius:4px;}
+  .reset-case:hover{background:#5d1f17;}
   .player-select{ display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 12px; margin-top: 60px;}
   .characterSelectTitle{font-size: 24px; color: var(--parchment); margin-bottom: 12px;}
   .player-select button{background:var(--brass-dark);color:#f4e9d3;border:none;padding:10px 18px;font-family:inherit;font-size:32px;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:5vw;width: 50vw;justify-content: center;}
@@ -256,6 +286,8 @@
       </svg>
     </div>
     <div class="legend">
+      <span><span class="legend-outline"></span>Rooms <em id="legend-who">you</em> searched</span>
+      <span><span class="legend-check">&#10003;</span>Searched by anyone in the party</span>
       <span><span class="dot" style="background:#a32d2d"></span>Crime scene</span>
       <span><span class="dot" style="background:#854f0b"></span>Russ detained</span>
       <span><span class="dot" style="background:var(--black)"></span><span id="player-visited-label"></span> visited</span>
@@ -394,10 +426,12 @@
 <script>
 
 let data = null;
-const dataReady = getRealtimeData().then(loadedData => {
+const dataReady = getRealtimeData().then(async loadedData => {
   data = loadedData;
   window.caseData = data;
   console.log('Data loaded from Firebase Realtime Database:', data);
+  await syncVisitedFromPlayers();
+  renderDeckPlan();
   return data;
 });
 let selectedPlayer = null;
@@ -417,6 +451,58 @@ const firebaseConfig = {
   messagingSenderId: "385210001785",
   appId: "1:385210001785:web:b4eed77b37743bb96ba7a8"
 };
+
+function span(className, text){
+  const el = document.createElement('span');
+  el.className = className;
+  el.textContent = text;
+  return el;
+}
+
+function renderDeckPlan(){
+  if(!data.Decks || !data.Rooms){
+    console.warn('Deck plan is empty: the database is missing the Decks and/or Rooms node.');
+  }
+
+  const container = document.getElementById('deck-plan');
+  const decks = data.Decks ?? {};
+  const rooms = data.Rooms ?? {};
+  const byOrder = source => (a, b) => (source[a].order ?? 0) - (source[b].order ?? 0);
+
+  container.textContent = '';
+  Object.keys(decks).sort(byOrder(decks)).forEach(deckId => {
+    const deckRooms = rooms[deckId];
+    if(!deckRooms) return;
+
+    const section = document.createElement('div');
+    section.className = 'deck-section';
+    section.appendChild(span('deck-label', decks[deckId].label ?? deckId));
+
+    const grid = document.createElement('div');
+    grid.className = 'room-grid';
+
+    Object.keys(deckRooms).sort(byOrder(deckRooms)).forEach(roomId => {
+      const room = deckRooms[roomId];
+      const card = document.createElement('a');
+      card.id = roomId;
+      card.className = 'locationButton room-card ' + (room.variant ?? 'cabin');
+      if(room.visited) card.classList.add('visited');
+      card.addEventListener('click', () => selectLocation(roomId));
+
+      card.appendChild(span('locationIndicator', 'You are here'));
+      card.appendChild(span('room-name', room.name ?? roomId));
+      card.appendChild(span('room-subtitle', room.subtitle ?? ''));
+      const mark = span('visitedMark', '✓');
+      mark.title = 'Searched by someone in the party';
+      card.appendChild(mark);
+
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
 
 async function getRealtimeData(){
   const {initializeApp} = await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js');
@@ -445,6 +531,46 @@ async function selectPlayer(playerName) {
   populatePageFromData();
 }
 
+// Players are the top-level nodes that aren't Decks / Rooms.
+function playerIds(){
+  return Object.keys(data).filter(key =>
+    data[key] && ('clues' in data[key] || 'img_url' in data[key]));
+}
+
+// Clears every player's progress and marks all rooms unvisited, in one atomic
+// write. Room/deck metadata and the players themselves are kept.
+async function resetCase(){
+  const message = 'Reset the case for EVERYONE?\n\n'
+    + 'This clears all locations, clue notes and suspects, and marks every room unvisited.\n'
+    + 'It cannot be undone.';
+  if(!confirm(message)) return;
+
+  const updates = {};
+  Object.entries(data.Rooms ?? {}).forEach(([deck, deckRooms]) => {
+    Object.keys(deckRooms).forEach(roomId => {
+      updates['Rooms/' + deck + '/' + roomId + '/visited'] = false;
+      deckRooms[roomId].visited = false;
+    });
+  });
+
+  playerIds().forEach(player => {
+    ['selectedLocations', 'currentLocation', 'primarySuspect'].forEach(field => {
+      updates[player + '/' + field] = null;
+      delete data[player][field];
+    });
+    Object.keys(data[player].clues ?? {}).forEach(clueId => {
+      updates[player + '/clues/' + clueId + '/ticked_off'] = false;
+      updates[player + '/clues/' + clueId + '/note'] = '';
+      data[player].clues[clueId] = { ticked_off: false, note: '' };
+    });
+  });
+
+  await realtimeUpdate(realtimeRef(realtimeDatabase, '/'), updates);
+  renderDeckPlan();
+  populatePageFromData();
+  console.log('Case reset:', Object.keys(updates).length, 'fields cleared');
+}
+
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -470,9 +596,10 @@ async function selectLocation(loc){
     newSelectedBtn.classList.add('selected');
     showLocationIndicator(loc);
     await realtimeSet(
-    realtimeRef(realtimeDatabase, selectedPlayer + '/currentLocation'),
-    loc
-  );
+      realtimeRef(realtimeDatabase, selectedPlayer + '/currentLocation'),
+      loc
+    );
+    await markRoomVisited(loc);
   }
   const updatedLocationIds = selectedLocationButtons.map(btn=>btn.id);
   data[selectedPlayer].selectedLocations = updatedLocationIds;
@@ -482,6 +609,32 @@ async function selectLocation(loc){
   );
   console.log(data[selectedPlayer]);
 
+}
+
+function deckOfRoom(roomId){
+  const rooms = data.Rooms ?? {};
+  return Object.keys(rooms).find(deck => rooms[deck]?.[roomId]);
+}
+
+async function markRoomVisited(loc){
+  const deck = deckOfRoom(loc);
+  if(!deck) return; // room isn't in the database, nothing to mark
+  if(data.Rooms[deck][loc].visited) return; // already visited, skip the write
+  data.Rooms[deck][loc].visited = true;
+  document.getElementById(loc)?.classList.add('visited');
+  await realtimeSet(
+    realtimeRef(realtimeDatabase, 'Rooms/' + deck + '/' + loc + '/visited'),
+    true
+  );
+}
+
+// A room counts as visited once ANY player has it in their selectedLocations.
+// Runs on load so rooms selected before this feature existed (or by a player
+// whose session wrote nothing) still end up flagged. Visited is never cleared:
+// deselecting a location does not un-explore the room.
+async function syncVisitedFromPlayers(){
+  const visitedIds = new Set(playerIds().flatMap(player => data[player].selectedLocations ?? []));
+  await Promise.all([...visitedIds].map(roomId => markRoomVisited(roomId)));
 }
 
 function showLocationIndicator(loc){
@@ -570,7 +723,6 @@ function populatePageFromData(player = selectedPlayer){
     button.classList.remove('selected');
   });
   document.querySelectorAll('.locationIndicator').forEach(indicator => {
-    indicator.textContent = '';
     indicator.style.visibility = 'hidden';
   });
 
@@ -618,6 +770,9 @@ function populatePageFromData(player = selectedPlayer){
     cb.closest('.clue-item').classList.toggle('checked', isChecked);
     cb.closest('.clue-item').querySelector('.note-input').value = clue?.note ?? '';
   });
+
+  document.getElementById('legend-who').textContent =
+    player === selectedPlayer ? 'you' : (data[player].name ?? player);
 
   updateProgress();
 }

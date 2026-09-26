@@ -6,7 +6,7 @@
 <style>
   :root{
     --parchment:#f4e9d3; --parchment-dark:#e8d9b8; --ink:#3b2f22;
-    --brass:#a9762c; --brass-dark:#7a5420; --red:#7a2b20; --green:#3d5a3a;
+    --brass:#a9762c; --brass-dark:#7a5420; --red:#7a2b20; --green:#3d5a3a; --blue:#229fff; --black:#000000;
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Georgia','Times New Roman',serif;background:#20180f;color:var(--ink);min-height:100vh;}
@@ -40,8 +40,10 @@
   .legend span{display:inline-flex;align-items:center;gap:6px;}
   .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
   .save-note{font-size:11px;color:#8a7a55;margin-top:6px;text-align:right;}
-  .selected rect{stroke-width:3px;stroke:var(--red);}
+  .selected rect{stroke-width:3px;stroke:var(--black);}
+  .other-selected rect{stroke-width:3px;stroke:var(--blue);}
   .locationButton{cursor:pointer;}
+  .player-location-avatar{clip-path:circle(50%);pointer-events:none;}
   .locationIndicator{visibility:hidden;font-weight:bold;}
   .player-select{ display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 12px; margin-top: 60px;}
   .characterSelectTitle{font-size: 24px; color: var(--parchment); margin-bottom: 12px;}
@@ -112,20 +114,20 @@
         <text x="80" y="170" font-size="14" fill="#2c2c2a" font-weight="bold">Upper deck</text>
         
         <a type="button" onclick="selectLocation('bridge')" id="bridge" class="locationButton">
-          <text x="161" y="190" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="161" y="188" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="80" y="195" width="162" height="56" rx="8" fill="#e6f1fb" stroke="#185fa5"/>
           <text x="161" y="213" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#0c447c">Bridge</text>
           <text x="161" y="233" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5">Charts &amp; log</text>
         </a>
         <a type="button" onclick="selectLocation('captains-quarters')" id="captains-quarters" class="locationButton">
-          <text x="339" y="190" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="339" y="188" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="258" y="195" width="162" height="56" rx="8" fill="#e6f1fb" stroke="#185fa5"/>
           <text x="339" y="213" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#0c447c">Captain's qtrs</text>
           <text x="339" y="233" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5">Locked &amp; private</text>
         </a>
 
         <a type="button" onclick="selectLocation('promenade')" id="promenade" class="locationButton">
-          <text x="517" y="190" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="517" y="188" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="436" y="195" width="162" height="56" rx="8" fill="#e6f1fb" stroke="#185fa5"/>
           <text x="517" y="213" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#0c447c">Promenade</text>
           <text x="517" y="233" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5">Gossip &amp; witnesses</text>
@@ -135,84 +137,84 @@
         <text x="80" y="310" font-size="14" fill="#2c2c2a" font-weight="bold">Main deck</text>
 
         <a type="button" onclick="selectLocation('family-cabin')" id="family-cabin" class="locationButton">
-          <text x="161" y="330" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="161" y="328" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="80" y="335" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="161" y="353" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Family cabin</text>
           <text x="161" y="373" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Family of three</text>
         </a>
 
         <a type="button" onclick="selectLocation('vances-cabin')" id="vances-cabin" class="locationButton">
-          <text x="339" y="330" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="339" y="328" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="258" y="335" width="162" height="56" rx="8" fill="#fcebeb" stroke="#a32d2d"/>
           <text x="339" y="353" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#791f1f">Vance's cabin</text>
           <text x="339" y="373" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#a32d2d">Crime scene</text>
         </a>
 
         <a type="button" onclick="selectLocation('sams-cabin')" id="sams-cabin" class="locationButton">
-          <text x="517" y="330" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="517" y="328" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="436" y="335" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="517" y="353" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Sam's cabin</text>
           <text x="517" y="373" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Bard's quarters</text>
         </a>
 
         <a type="button" onclick="selectLocation('widows-cabin')" id="widows-cabin" class="locationButton">
-          <text x="161" y="398" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="161" y="396" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="80" y="403" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="161" y="421" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Widow's cabin</text>
           <text x="161" y="441" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Quiet retiree</text>
         </a>
 
         <a type="button" onclick="selectLocation('ezras-cabin')" id="ezras-cabin" class="locationButton">
-          <text x="339" y="398" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="339" y="396" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="258" y="403" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="339" y="421" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Ezra's cabin</text>
           <text x="339" y="441" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Warlock/barbarian</text>
         </a>
 
         <a type="button" onclick="selectLocation('thistlewood-cabin')" id="thistlewood-cabin" class="locationButton">
-          <text x="517" y="398" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="517" y="396" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="436" y="403" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="517" y="421" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Thistlewood cabin</text>
           <text x="517" y="441" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Passenger cabin</text>
         </a>
 
         <a type="button" onclick="selectLocation('olivers-cabin')" id="olivers-cabin" class="locationButton">
-          <text x="161" y="466" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="161" y="464" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="80" y="471" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="161" y="489" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Oliver's cabin</text>
           <text x="161" y="509" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Rogue's quarters</text>
         </a>
 
         <a type="button" onclick="selectLocation('merchants-cabin')" id="merchants-cabin" class="locationButton">
-          <text x="339" y="466" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="339" y="464" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="258" y="471" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="339" y="489" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Merchant's cabin</text>
           <text x="339" y="509" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Fellow trader</text>
         </a>
 
         <a type="button" onclick="selectLocation('russ-cabin')" id="russ-cabin" class="locationButton">
-          <text x="517" y="466" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="517" y="464" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="436" y="471" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="517" y="489" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Russ's cabin</text>
           <text x="517" y="509" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Searched by crew</text>
         </a>
 
         <a type="button" onclick="selectLocation('ilsas-quarters')" id="ilsas-quarters" class="locationButton">
-          <text x="161" y="534" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="161" y="532" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="80" y="539" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="161" y="557" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Ilsa's quarters</text>
           <text x="161" y="577" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Steward's room</text>
         </a>
 
         <a type="button" onclick="selectLocation('zeps-cabin')" id="zeps-cabin" class="locationButton">
-          <text x="339" y="534" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="339" y="532" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="258" y="539" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="339" y="557" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Zep's cabin</text>
           <text x="339" y="577" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Paladin's quarters</text>
         </a>
 
         <a type="button" onclick="selectLocation('dining-hall')" id="dining-hall" class="locationButton">
-          <text x="517" y="534" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="517" y="532" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="436" y="539" width="162" height="56" rx="8" fill="#faece7" stroke="#993c1d"/>
           <text x="517" y="557" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#712b13">Dining hall</text>
           <text x="517" y="577" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993c1d">Group interviews</text>
@@ -222,28 +224,28 @@
         <text x="80" y="660" font-size="14" fill="#2c2c2a" font-weight="bold">Lower deck</text>
 
         <a type="button" onclick="selectLocation('crew-quarters')" id="crew-quarters" class="locationButton">
-          <text x="139" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="139" y="678" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="80" y="685" width="118" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56"/>
           <text x="139" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#085041">Crew qtrs</text>
           <text x="139" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0f6e56">Crew bunks</text>
         </a>
 
         <a type="button" onclick="selectLocation('engine-room')" id="engine-room" class="locationButton">
-          <text x="273" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="273" y="678" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="214" y="685" width="118" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56"/>
           <text x="273" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#085041">Engine room</text>
           <text x="273" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0f6e56">Loud &amp; smoky</text>
         </a>
 
         <a type="button" onclick="selectLocation('cargo-hold')" id="cargo-hold" class="locationButton">
-          <text x="407" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="407" y="678" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="348" y="685" width="118" height="56" rx="8" fill="#f1efe8" stroke="#5f5e5a"/>
           <text x="407" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#2c2c2a">Cargo hold</text>
           <text x="407" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5f5e5a">Access restricted</text>
         </a>
 
         <a type="button" onclick="selectLocation('brig')" id="brig" class="locationButton">
-          <text x="541" y="680" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here</text>
+          <text x="541" y="678" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#185fa5" class="locationIndicator">You are here &#11015;</text>
           <rect x="482" y="685" width="118" height="56" rx="8" fill="#faeeda" stroke="#854f0b"/>
           <text x="541" y="703" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#633806">Brig</text>
           <text x="541" y="723" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#854f0b">Holding cell</text>
@@ -253,6 +255,8 @@
     <div class="legend">
       <span><span class="dot" style="background:#a32d2d"></span>Crime scene</span>
       <span><span class="dot" style="background:#854f0b"></span>Russ detained</span>
+      <span><span class="dot" style="background:var(--black)"></span><span id="player-visited-label"></span> visited</span>
+      <span><span class="dot" style="background:var(--blue)"></span>Party visited</span>
     </div>
   </div>
 
@@ -479,10 +483,11 @@ function showLocationIndicator(loc){
   const btn = document.getElementById('panel-map').querySelector('a#'+loc);
   if(btn){
     const indicator = btn.querySelector('.locationIndicator');
-    indicator.textContent = 'You are here';
+    indicator.textContent = 'You are here \u2B07';
     indicator.style.visibility='visible';
   }
   data[selectedPlayer].currentLocation = loc;
+  refreshPlayerLocationAvatars();
 }
 
 const checkboxRefs = Array.from(document.querySelectorAll('.clue-item input[type="checkbox"]'))
@@ -501,7 +506,60 @@ function showPlayerNotes(playerName){
   }
 }
 
+function getOtherVisitedLocations(player = selectedPlayer){
+  // First get list of ALL visited locations by all players
+  let allVisitedLocations = [];
+  for (const player in data) {
+    if (player === 'DM') continue; // Skip DM
+    const visitedLocations = data[player].selectedLocations ?? [];
+    allVisitedLocations.push(...visitedLocations);
+  }
+  // Then remove all locations that the current player has also visited
+  const currentPlayerVisitedLocations = data[player].selectedLocations ?? [];
+  const otherVisitedLocationsIds = allVisitedLocations.filter(loc => !currentPlayerVisitedLocations.includes(loc));
+  return otherVisitedLocationsIds;
+}
+
+function getPlayerCurrentLocations(){
+  const currentLocations = {};
+  for (const player in data) {
+    if (player === 'DM') continue; // Skip DM
+    currentLocations[player] = data[player].currentLocation || null;
+  }
+  return currentLocations;
+}
+
+function refreshPlayerLocationAvatars(){
+  document.querySelectorAll('.player-location-avatar').forEach(avatar => avatar.remove());
+  for (const [playerName, locationId] of Object.entries(getPlayerCurrentLocations())) {
+    if (locationId) {
+      const locationButton = document.getElementById('panel-map').querySelector('a#' + locationId);
+      if (locationButton) {
+        const room = locationButton.querySelector('rect');
+        const imageUrl = data[playerName].img_url;
+        if (room && imageUrl) {
+          const avatar = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+          const avatarSize = 30;
+          avatar.setAttribute('href', imageUrl);
+          avatar.setAttribute('x', Number(room.getAttribute('x')) + Number(room.getAttribute('width')) - 20);
+          avatar.setAttribute('y', Number(room.getAttribute('y')) - 6);
+          avatar.setAttribute('width', avatarSize);
+          avatar.setAttribute('height', avatarSize);
+          avatar.setAttribute('class', 'player-location-avatar');
+          avatar.setAttribute('role', 'img');
+          avatar.setAttribute('aria-label', capitalizeFirstLetter(playerName));
+          locationButton.appendChild(avatar);
+        }
+      }
+    }
+  }
+}
+
 function populatePageFromData(player = selectedPlayer){
+  const playerLabel = player === selectedPlayer ? 'You' : capitalizeFirstLetter(player);
+  document.getElementById('player-visited-label').textContent = playerLabel;
+
+  // Clear previous selections and indicators
   document.querySelectorAll('.locationButton').forEach(button => {
     button.classList.remove('selected');
   });
@@ -513,18 +571,26 @@ function populatePageFromData(player = selectedPlayer){
   const selectedLocationIds = data[player].selectedLocations ?? [];
   selectedLocationButtons = [];
 
+  let otherVisitedLocationsIds = getOtherVisitedLocations(player);
+  const currentPlayerLocations = getPlayerCurrentLocations();
+  console.log('Current locations of all players:', currentPlayerLocations);
+
   document.querySelectorAll('.locationButton').forEach(button => {
+    const isOtherVisited = otherVisitedLocationsIds.includes(button.id);
+    button.classList.toggle('other-selected', isOtherVisited);
     const isSelected = selectedLocationIds.includes(button.id);
     button.classList.toggle('selected', isSelected);
     if(isSelected) selectedLocationButtons.push(button);
   });
+
+  refreshPlayerLocationAvatars();
 
   if(data[player].currentLocation){
     const currentLocation = document.getElementById('panel-map')
       .querySelector('a#'+data[player].currentLocation);
     if(currentLocation){
       const indicator = currentLocation.querySelector('.locationIndicator');
-      indicator.textContent = 'You are here';
+      indicator.textContent = 'You are here \u2B07';
       indicator.style.visibility = 'visible';
     }
   }

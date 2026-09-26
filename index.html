@@ -35,6 +35,8 @@
   .progress-bar{height:14px;background:#d8c69a;border-radius:7px;overflow:hidden;}
   .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
   .progress-label{font-size:12px;margin-top:4px;color:#6b5a3d;}
+  .reset-case{margin-top:6px;background:var(--red);color:#f4e9d3;border:none;padding:5px 10px;font-family:inherit;font-size:12px;cursor:pointer;border-radius:4px;}
+  .reset-case:hover{background:#5d1f17;}
   .map-wrap{overflow-x:auto;}
   .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:13px;}
   .legend span{display:inline-flex;align-items:center;gap:6px;}
@@ -95,6 +97,7 @@
       <option value="zep">Zep</option>
       <option value="russ">Russ</option>
     </select>
+    <button class="reset-case" id="reset-case" onclick="resetCase()" hidden>Reset case</button>
   </div>
 
   <div class="tabs">
@@ -403,6 +406,7 @@ let dataFileHandle = null;
 let realtimeDatabase;
 let realtimeRef;
 let realtimeSet;
+let realtimeUpdate;
 
 const firebaseConfig = {
   apiKey: "AIzaSyBLxmVH1-5JXRkIEWgUOZW-lxSla6OUu4A",
@@ -416,11 +420,12 @@ const firebaseConfig = {
 
 async function getRealtimeData(){
   const {initializeApp} = await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js');
-  const {getDatabase, ref, get, set} = await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js');
+  const {getDatabase, ref, get, set, update} = await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js');
   const app = initializeApp(firebaseConfig);
   realtimeDatabase = getDatabase(app);
   realtimeRef = ref;
   realtimeSet = set;
+  realtimeUpdate = update;
   const snapshot = await get(realtimeRef(realtimeDatabase, '/'));
 
   if(!snapshot.exists()){
@@ -436,6 +441,7 @@ async function selectPlayer(playerName) {
   document.querySelector('.player-select').style.display = 'none';
   document.querySelector('.app').style.visibility = 'visible';
   document.querySelector('.viewPlayerNotes select').value = playerName;
+  document.getElementById('reset-case').hidden = playerName !== 'DM';
   populatePageFromData();
 }
 
@@ -764,6 +770,39 @@ function addCluesTogether(){
 
 function capitalizeFirstLetter(val) {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+
+// Clears every player's progress and marks all rooms unvisited, in one atomic
+// write. Room/deck metadata and the players themselves are kept.
+async function resetCase(){
+  const message = 'Reset the case for EVERYONE?\n\n'
+    + 'This clears all locations, clue notes and suspects, and marks every room unvisited.\n'
+    + 'It cannot be undone.';
+  if(!confirm(message)) return;
+
+  const updates = {};
+  Object.entries(data.Rooms ?? {}).forEach(([deck, deckRooms]) => {
+    Object.keys(deckRooms).forEach(roomId => {
+      updates['Rooms/' + deck + '/' + roomId + '/visited'] = false;
+      deckRooms[roomId].visited = false;
+    });
+  });
+
+  Object.keys(data).forEach(player => {
+    ['selectedLocations', 'currentLocation', 'primarySuspect'].forEach(field => {
+      updates[player + '/' + field] = null;
+      delete data[player][field];
+    });
+    Object.keys(data[player].clues ?? {}).forEach(clueId => {
+      updates[player + '/clues/' + clueId + '/ticked_off'] = false;
+      updates[player + '/clues/' + clueId + '/note'] = '';
+      data[player].clues[clueId] = { ticked_off: false, note: '' };
+    });
+  });
+
+  await realtimeUpdate(realtimeRef(realtimeDatabase, '/'), updates);
+  populatePageFromData();
+  console.log('Case reset:', Object.keys(updates).length, 'fields cleared');
 }
 
 function disableInputs(){

@@ -431,7 +431,6 @@ const dataReady = getRealtimeData().then(async loadedData => {
   window.caseData = data;
   console.log('Data loaded from Firebase Realtime Database:', data);
   await syncVisitedFromPlayers();
-  renderDeckPlan();
   return data;
 });
 let selectedPlayer = null;
@@ -566,7 +565,6 @@ async function resetCase(){
   });
 
   await realtimeUpdate(realtimeRef(realtimeDatabase, '/'), updates);
-  renderDeckPlan();
   populatePageFromData();
   console.log('Case reset:', Object.keys(updates).length, 'fields cleared');
 }
@@ -591,6 +589,18 @@ async function selectLocation(loc){
   if(newSelectedBtn.classList.contains('selected')){
     selectedLocationButtons = selectedLocationButtons.filter(button => button !== newSelectedBtn);
     newSelectedBtn.classList.remove('selected');
+    newSelectedBtn.querySelector('.locationIndicator').style.visibility = 'hidden';
+    newSelectedBtn.querySelectorAll('.player-location-avatar').forEach(avatar => {
+      if (avatar.dataset.player === selectedPlayer) avatar.remove();
+    });
+    if (data[selectedPlayer].currentLocation === loc) {
+      data[selectedPlayer].currentLocation = null;
+      await realtimeSet(
+        realtimeRef(realtimeDatabase, selectedPlayer + '/currentLocation'),
+        null
+      );
+      refreshPlayerLocationAvatars();
+    }
   } else {
     selectedLocationButtons.push(newSelectedBtn);
     newSelectedBtn.classList.add('selected');
@@ -705,6 +715,7 @@ function refreshPlayerLocationAvatars(){
           avatar.setAttribute('width', avatarSize);
           avatar.setAttribute('height', avatarSize);
           avatar.setAttribute('class', 'player-location-avatar');
+          avatar.dataset.player = playerName;
           avatar.setAttribute('role', 'img');
           avatar.setAttribute('aria-label', capitalizeFirstLetter(playerName));
           locationButton.appendChild(avatar);

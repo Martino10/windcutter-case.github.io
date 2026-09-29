@@ -653,28 +653,36 @@ function getPlayerCurrentLocations(){
 
 function refreshPlayerLocationAvatars(){
   document.querySelectorAll('.player-location-avatar').forEach(avatar => avatar.remove());
+  const playersByLocation = {};
   for (const [playerName, locationId] of Object.entries(getPlayerCurrentLocations())) {
-    if (locationId) {
-      const locationButton = document.getElementById('panel-map').querySelector('a#' + locationId);
-      if (locationButton) {
-        const room = locationButton.querySelector('rect');
-        const imageUrl = data[playerName].img_url;
-        if (room && imageUrl) {
-          const avatar = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-          const avatarSize = 30;
-          avatar.setAttribute('href', imageUrl);
-          avatar.setAttribute('x', Number(room.getAttribute('x')) + Number(room.getAttribute('width')) - 20);
-          avatar.setAttribute('y', Number(room.getAttribute('y')) - 6);
-          avatar.setAttribute('width', avatarSize);
-          avatar.setAttribute('height', avatarSize);
-          avatar.setAttribute('class', 'player-location-avatar');
-          avatar.dataset.player = playerName;
-          avatar.setAttribute('role', 'img');
-          avatar.setAttribute('aria-label', capitalizeFirstLetter(playerName));
-          locationButton.appendChild(avatar);
-        }
-      }
-    }
+    if (locationId) (playersByLocation[locationId] ??= []).push(playerName);
+  }
+
+  for (const [locationId, playerNames] of Object.entries(playersByLocation)) {
+    const locationButton = document.getElementById('panel-map').querySelector('a#' + locationId);
+    const room = locationButton?.querySelector('rect');
+    if (!room) continue;
+
+    const playersWithImages = playerNames.filter(playerName => data[playerName].img_url);
+    const avatarSize = 30;
+    const avatarGap = 4;
+    const rowWidth = playersWithImages.length * avatarSize + (playersWithImages.length - 1) * avatarGap;
+    const startX = Number(room.getAttribute('x')) + (Number(room.getAttribute('width')) - rowWidth) / 2;
+    const y = Number(room.getAttribute('y')) + (Number(room.getAttribute('height')) / 1.2);
+
+    playersWithImages.forEach((playerName, index) => {
+      const avatar = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      avatar.setAttribute('href', data[playerName].img_url);
+      avatar.setAttribute('x', startX + index * (avatarSize + avatarGap));
+      avatar.setAttribute('y', y);
+      avatar.setAttribute('width', avatarSize);
+      avatar.setAttribute('height', avatarSize);
+      avatar.setAttribute('class', 'player-location-avatar');
+      avatar.dataset.player = playerName;
+      avatar.setAttribute('role', 'img');
+      avatar.setAttribute('aria-label', capitalizeFirstLetter(playerName));
+      locationButton.appendChild(avatar);
+    });
   }
 }
 
